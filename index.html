@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>норм часы</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --bg: #1a1a2e;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            background: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        
+        .clock-container {
+            width: 350px;
+            padding: 30px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            position: relative;
+        }
+        
+        .time {
+            font-size: 4rem;
+            font-weight: 300;
+            margin: 10px 0;
+            letter-spacing: 2px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .time-part {
+            display: inline-block;
+            position: relative;
+            width: 1.2em;
+            text-align: center;
+            overflow: hidden;
+        }
+        
+        .time-digit {
+            display: block;
+            transition: transform 0.3s ease-out;
+        }
+        
+        .ms {
+            font-size: 1.2rem;
+            opacity: 0.7;
+            margin-bottom: 15px;
+        }
+        
+        .date {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .timezone {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            margin-bottom: 20px;
+        }
+        
+        .settings-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .settings-btn:hover {
+            transform: rotate(30deg);
+        }
+        
+        .settings-panel {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        .soundcloud {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .soundcloud.show {
+            display: block;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            float: right;
+        }
+        
+        .switch input {
+            opacity: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background: var(--primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        @keyframes flip {
+            0% { transform: translateY(0) rotateX(0); }
+            50% { transform: translateY(-50%) rotateX(90deg); }
+            100% { transform: translateY(-100%) rotateX(0); }
+        }
+        
+        .flip {
+            animation: flip 0.5s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+        }
+    </style>
+</head>
+<body>
+    <div class="clock-container">
+        <button class="settings-btn" id="settingsBtn">⚙️</button>
+        
+        <div class="time" id="time">
+            <div class="time-part"><span class="time-digit" id="h1">0</span></div>
+            <div class="time-part"><span class="time-digit" id="h2">0</span></div>
+            <span>:</span>
+            <div class="time-part"><span class="time-digit" id="m1">0</span></div>
+            <div class="time-part"><span class="time-digit" id="m2">0</span></div>
+            <span>:</span>
+            <div class="time-part"><span class="time-digit" id="s1">0</span></div>
+            <div class="time-part"><span class="time-digit" id="s2">0</span></div>
+        </div>
+        
+        <div class="ms" id="ms">000</div>
+        <div class="date" id="date">Неделя 0</div>
+        <div class="timezone" id="timezone">Часовой пояс: UTC</div>
+        
+        <div class="settings-panel" id="settingsPanel">
+            <label>
+                Показывать миллисекунды
+                <label class="switch">
+                    <input type="checkbox" id="showMs" checked>
+                    <span class="slider"></span>
+                </label>
+            </label>
+            <br><br>
+            <label>
+                SoundCloud плеер
+                <label class="switch">
+                    <input type="checkbox" id="showSoundcloud">
+                    <span class="slider"></span>
+                </label>
+            </label>
+            <br><br>
+            <label>
+                Часовой пояс:
+                <select id="timezoneSelect">
+                    <option value="auto">Авто</option>
+                    <option value="UTC">UTC</option>
+                    <option value="Europe/Moscow">Москва</option>
+                    <option value="Europe/London">Лондон</option>
+                    <option value="America/New_York">Нью-Йорк</option>
+                </select>
+            </label>
+        </div>
+        
+        <div class="soundcloud" id="soundcloud">
+            <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" 
+            src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/293&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Элементы
+        const timeEl = document.getElementById('time');
+        const h1 = document.getElementById('h1');
+        const h2 = document.getElementById('h2');
+        const m1 = document.getElementById('m1');
+        const m2 = document.getElementById('m2');
+        const s1 = document.getElementById('s1');
+        const s2 = document.getElementById('s2');
+        const msEl = document.getElementById('ms');
+        const dateEl = document.getElementById('date');
+        const timezoneEl = document.getElementById('timezone');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const showMs = document.getElementById('showMs');
+        const showSoundcloud = document.getElementById('showSoundcloud');
+        const soundcloud = document.getElementById('soundcloud');
+        const timezoneSelect = document.getElementById('timezoneSelect');
+        
+        // Состояние
+        let currentTimezone = 'auto';
+        let lastSeconds = null;
+        
+        // Анимация цифры
+        function animateDigit(element, newValue) {
+            if(element.textContent !== newValue) {
+                element.classList.add('flip');
+                setTimeout(() => {
+                    element.textContent = newValue;
+                    element.classList.remove('flip');
+                }, 250);
+            }
+        }
+        
+        // Обновление времени
+        function updateTime() {
+            let now;
+            let timezoneName;
+            
+            if(currentTimezone === 'auto' || currentTimezone === 'UTC') {
+                now = new Date();
+                timezoneName = currentTimezone === 'UTC' ? 'UTC' : Intl.DateTimeFormat().resolvedOptions().timeZone;
+            } else {
+                const options = {
+                    timeZone: currentTimezone,
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                };
+                const timeStr = new Date().toLocaleTimeString('ru-RU', options);
+                const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+                now = new Date();
+                now.setHours(hours, minutes, seconds);
+                timezoneName = currentTimezone.split('/').pop().replace('_', ' ');
+            }
+            
+            // Форматирование времени
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+            
+            // Анимация цифр
+            animateDigit(h1, hours[0]);
+            animateDigit(h2, hours[1]);
+            animateDigit(m1, minutes[0]);
+            animateDigit(m2, minutes[1]);
+            
+            // Анимация секунд только при изменении
+            if(lastSeconds !== seconds) {
+                animateDigit(s1, seconds[0]);
+                animateDigit(s2, seconds[1]);
+                lastSeconds = seconds;
+                
+                // Обновление даты и недели
+                const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+                const dayName = days[now.getDay()];
+                const weekNumber = getWeekNumber(now);
+                dateEl.textContent = `${dayName}, Неделя ${weekNumber}`;
+            }
+            
+            // Миллисекунды
+            if(showMs.checked) {
+                msEl.textContent = milliseconds;
+                msEl.style.display = 'block';
+            } else {
+                msEl.style.display = 'none';
+            }
+            
+            // Часовой пояс
+            timezoneEl.textContent = `Часовой пояс: ${timezoneName}`;
+        }
+        
+        // Расчет номера недели
+        function getWeekNumber(date) {
+            const firstDay = new Date(date.getFullYear(), 0, 1);
+            const days = Math.floor((date - firstDay) / (24 * 60 * 60 * 1000));
+            return Math.ceil((days + firstDay.getDay() + 1) / 7);
+        }
+        
+        // Настройки
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+        });
+        
+        showSoundcloud.addEventListener('change', () => {
+            soundcloud.classList.toggle('show', showSoundcloud.checked);
+        });
+        
+        timezoneSelect.addEventListener('change', () => {
+            currentTimezone = timezoneSelect.value;
+        });
+        
+        // Запуск часов
+        updateTime();
+        setInterval(updateTime, 50);
+    </script>
+</body>
+</html>
